@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard Firebase Firestore</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    button { padding: 10px 20px; font-size: 16px; }
+    .status { margin-top: 10px; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>Dashboard ระบบควบคุมและสถานะ (Firestore)</h1>
+
+  <div>
+    <button id="btnToggleLight">เปิดไฟ</button>
+    <div id="lightStatus" class="status">สถานะไฟ: ปิด</div>
+  </div>
+
+  <div>
+    <h3>อุณหภูมิ: <span id="temperature">-</span> °C</h3>
+    <h3>ความชื้น: <span id="humidity">-</span> %</h3>
+    <h3>สถานะปั๊มน้ำ: <span id="pumpStatus">-</span></h3>
+    <h3>ค่าแสง: <span id="lightLevel">-</span></h3>
+  </div>
+
+  <script>
+    // 3.1 ใส่ Firebase config ของคุณที่นี่
+    const firebaseConfig = {
+  apiKey: "AIzaSyD3CEJkf4w0zqkwnRICWQeMM_e6AY39w4U",
+  authDomain: "mydashboardproject-6ba0e.firebaseapp.com",
+  projectId: "mydashboardproject-6ba0e",
+  storageBucket: "mydashboardproject-6ba0e.firebasestorage.app",
+  messagingSenderId: "1063884897416",
+  appId: "1:1063884897416:web:9a8e560a22e95dd5ff733d",
+  measurementId: "G-9EJRGJT54H"
+};
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const btnToggleLight = document.getElementById("btnToggleLight");
+    const lightStatusDiv = document.getElementById("lightStatus");
+    const temperatureSpan = document.getElementById("temperature");
+    const humiditySpan = document.getElementById("humidity");
+    const pumpStatusSpan = document.getElementById("pumpStatus");
+    const lightLevelSpan = document.getElementById("lightLevel");
+
+    let lightIsOn = false;
+
+    // Document reference
+    const docRef = db.collection('status').doc('system');
+
+    // ฟังข้อมูลแบบ real-time จาก Firestore
+    docRef.onSnapshot(doc => {
+      if (doc.exists) {
+        const data = doc.data();
+        lightIsOn = data.light_status;
+        updateLightUI();
+
+        temperatureSpan.textContent = (data.temperature !== undefined) ? data.temperature.toFixed(1) : "-";
+        humiditySpan.textContent = (data.humidity !== undefined) ? data.humidity.toFixed(1) : "-";
+        pumpStatusSpan.textContent = data.pump_status ? "ทำงาน" : "หยุด";
+        lightLevelSpan.textContent = data.light_level !== undefined ? data.light_level : "-";
+      } else {
+        console.log("ไม่มีข้อมูล document นี้");
+      }
+    });
+
+    // ฟังก์ชันอัปเดต UI ปุ่มและสถานะไฟ
+    function updateLightUI() {
+      if(lightIsOn) {
+        btnToggleLight.textContent = "ปิดไฟ";
+        lightStatusDiv.textContent = "สถานะไฟ: เปิด";
+      } else {
+        btnToggleLight.textContent = "เปิดไฟ";
+        lightStatusDiv.textContent = "สถานะไฟ: ปิด";
+      }
+    }
+
+    // กดปุ่มเปลี่ยนสถานะไฟ
+    btnToggleLight.addEventListener('click', () => {
+      docRef.update({
+        light_status: !lightIsOn
+      }).catch(error => {
+        console.error("อัปเดตข้อมูลผิดพลาด: ", error);
+      });
+    });
+
+  </script>
+</body>
+</html>
